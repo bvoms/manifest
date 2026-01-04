@@ -81,6 +81,21 @@ img{max-width:100%;border-radius:8px;margin-top:6px}
   border-radius:8px;
   font-size:14px;
 }
+.routine-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+}
+
+.routine-item label {
+  cursor: pointer;
+}
+
+.routine-item span {
+  color: var(--text);
+}
+
 </style>
 </head>
 
@@ -105,6 +120,17 @@ img{max-width:100%;border-radius:8px;margin-top:6px}
   <div class="progress"><div class="fill" id="carbFill"></div></div>
   <div class="small" id="advice"></div>
   <div class="small" id="carbText"></div>
+</section>
+
+<!-- ===== Рутина ===== -->
+<section>
+<h2>📋 Ежедневные рутины</h2>
+<div id="routines"></div>
+
+<div class="small" id="dayPercent"></div>
+<div class="progress">
+  <div class="fill" id="dayFill"></div>
+</div>
 </section>
 
 <!-- ===== ТРЕНИРОВКА ===== -->
@@ -437,6 +463,46 @@ function importData(e){
  };
  r.readAsText(e.target.files[0]);
 }
+const ROUTINES = [
+  { id:"cold", text:"🧊 Холод (душ / окунание)" },
+  { id:"morning", text:"☕ Утренний старт" },
+  { id:"plan", text:"📋 План на день" },
+  { id:"training", text:"🏋️ Тренировка" },
+  { id:"food", text:"🍽️ Питание закрыто" },
+  { id:"creatine", text:"💊 Креатин" },
+  { id:"gainer", text:"🥤 Гейнер" },
+  { id:"sleep", text:"🌙 Сон 7–8 часов" }
+];
+
+function renderRoutines(){
+  routines.innerHTML = "";
+  let done = 0;
+
+  ROUTINES.forEach(r => {
+    // гейнер — только в тренировочный день
+    if (r.id === "gainer" && !isTrainDay) return;
+
+    const key = `routine_${day}_${r.id}`;
+    const checked = localStorage[key] === "1";
+    if (checked) done++;
+
+    routines.innerHTML += `
+      <div class="routine-item">
+        <input type="checkbox" ${checked ? "checked" : ""}
+          onchange="localStorage['${key}']=this.checked?'1':'0';renderRoutines()">
+        <span>${r.text}</span>
+      </div>
+    `;
+  });
+
+  const total = isTrainDay ? ROUTINES.length : ROUTINES.length - 1;
+  const percent = Math.round(done / total * 100);
+
+  dayFill.style.width = percent + "%";
+  dayPercent.innerText = `День выполнен на ${percent}%`;
+}
+
+renderRoutines();
 </script>
 
 </body>
