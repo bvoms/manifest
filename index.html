@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🔥 NewMe — полноценный помощник</title>
+<title>🔥 NewMe</title>
+
+<link rel="manifest" href="manifest.json">
 
 <style>
 :root{
@@ -14,30 +16,79 @@
   --accent:#5cff9d;
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--text)}
+body{margin:0;font-family:system-ui;background:var(--bg);color:var(--text)}
 header{padding:20px;text-align:center;font-size:24px;font-weight:700}
 section{margin:16px;padding:16px;background:var(--card);border-radius:12px}
 h2{margin-top:0}
 .small{font-size:13px;color:var(--muted)}
 .progress{height:10px;background:#000;border-radius:6px;overflow:hidden}
 .fill{height:100%;background:var(--accent);width:0%}
-label{display:flex;gap:10px;margin:6px 0;align-items:flex-start}
-input{accent-color:var(--accent)}
 button{
   padding:8px 12px;margin:4px 4px 0 0;
   background:transparent;border:1px solid var(--accent);
-  color:var(--accent);border-radius:8px;
+  color:var(--accent);border-radius:8px
 }
 button.active{background:var(--accent);color:#000}
+label{display:flex;gap:10px;margin:6px 0;align-items:flex-start}
+input,select{
+  background:#101015;border:1px solid #333;
+  color:var(--text);border-radius:6px;padding:4px 6px
+}
+details{background:#101015;padding:8px;border-radius:8px;margin:6px 0}
+summary{cursor:pointer;color:var(--accent);font-weight:600}
 pre{white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.4}
+img{max-width:100%;border-radius:8px;margin-top:6px}
 .meal-title{font-weight:600}
+.food-input {
+  width: 70px;
+  padding: 6px 8px;
+  background: linear-gradient(180deg, #14141a, #0e0e11);
+  border: 1px solid #2a2a35;
+  border-radius: 10px;
+  color: #eaeaf0;
+  font-size: 14px;
+  outline: none;
+  transition: 0.2s;
+  text-align: center;
+}
+
+.food-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(92,255,157,0.15);
+}
+
+.food-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+}
+
+.food-name {
+  min-width: 80px;
+  color: var(--muted);
+}
+
+.food-rec {
+  color: var(--muted);
+  font-size: 12px;
+}
+#advice{
+  margin-top:10px;
+  padding:8px 10px;
+  background:#101015;
+  border-left:3px solid var(--accent);
+  border-radius:8px;
+  font-size:14px;
+}
 </style>
 </head>
 
 <body>
 
-<header>🔥 NewMe — полноценный помощник</header>
+<header>🔥 NewMe</header>
 
+<!-- ===== ДЕНЬ / СТАТУС ===== -->
 <section>
   <div class="small" id="dayInfo"></div>
   <div class="small" id="quote"></div>
@@ -52,180 +103,340 @@ pre{white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.4}
 
   <div class="small">Углеводы</div>
   <div class="progress"><div class="fill" id="carbFill"></div></div>
+  <div class="small" id="advice"></div>
   <div class="small" id="carbText"></div>
 </section>
 
+<!-- ===== ТРЕНИРОВКА ===== -->
 <section>
 <h2>🏋️ Сегодняшняя тренировка</h2>
 <div id="workout"></div>
 </section>
 
+<!-- ===== ГАРНИР ===== -->
 <section>
-<h2>🍚 Выбор гарнира на сегодня</h2>
+<h2>🍚 Гарнир на сегодня</h2>
 <button id="btn-rice" onclick="setSide('rice')">Рис</button>
 <button id="btn-pasta" onclick="setSide('pasta')">Макароны</button>
 <button id="btn-buckwheat" onclick="setSide('buckwheat')">Гречка</button>
 </section>
 
+<!-- ===== ПИТАНИЕ ===== -->
 <section>
-<h2>🍽️ Питание (готовая еда)</h2>
+<h2>🍽️ Питание (рекомендация → факт)</h2>
 <div id="meals"></div>
 </section>
 
+<!-- ===== ВЕС / ФОТО ===== -->
+<section>
+<h2>⚖️ Вес и фото-прогресс</h2>
+<input type="number" id="weightInput" placeholder="Вес (кг)">
+<input type="file" accept="image/*" onchange="savePhoto(event)">
+<br>
+<button onclick="saveWeight()">Сохранить</button>
+<div id="progressHistory"></div>
+</section>
+
+<!-- ===== НЕДЕЛИ ===== -->
+<section>
+<h2>📊 Недельные отчёты</h2>
+<div id="weekly"></div>
+</section>
+
+<!-- ===== НАПОМИНАНИЯ ===== -->
+<section>
+<h2>🔔 Напоминания</h2>
+<button onclick="enableReminders()">Включить</button>
+<button onclick="disableReminders()">Выключить</button>
+<div class="small">08:00 · 11:00 · 14:00 · 17:00 · 19:00 · 21:00</div>
+</section>
+
+<!-- ===== СИНХРОНИЗАЦИЯ ===== -->
+<section>
+<h2>🔄 Синхронизация</h2>
+<button onclick="exportData()">Экспорт</button>
+<input type="file" id="importFile" hidden onchange="importData(event)">
+<button onclick="importFile.click()">Импорт</button>
+</section>
+
 <script>
-// ===== ДЕНЬ =====
+// ==================== ОСНОВА ====================
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js");
+}
+
 const start = localStorage.start || new Date().toISOString();
 localStorage.start = start;
 const day = Math.floor((Date.now()-new Date(start))/86400000)+1;
-dayInfo.innerText = `День ${day}`;
+dayInfo.innerText = `День ${day} | Цикл ${(day-1)%7+1}`;
 
-// ===== МОТИВАЦИЯ =====
 const quotes=[
-  "Слабость — это привычка",
-  "Еда и тренировки = рост",
-  "Сегодня ты строишь тело",
-  "Система сильнее мотивации"
+  "Еда = рост",
+  "Система сильнее мотивации",
+  "Недоел — не вырос",
+  "Сегодня ты строишь тело"
 ];
 const qKey="q"+day;
 if(!localStorage[qKey]) localStorage[qKey]=quotes[Math.floor(Math.random()*quotes.length)];
 quote.innerText="🧠 "+localStorage[qKey];
 
-// ===== ТРЕНИРОВКИ =====
+// ==================== ТРЕНИРОВКИ ====================
 const workouts=[
 {
-  title:"Грудь + Трицепс",
-  text:`Отжимания — 3×15–20, 4-й до отказа
-Отжимания с ногами — 3×12–15
-Медленные отжимания — 2×макс
-
-Узкие отжимания — 3×12–15
-Обратные отжимания — 3×макс
-
-Финишер: 30/15 × 4`
+title:"Грудь + Трицепс",
+ex:[
+["Отжимания 3×15–20 (4-й отказ)","Корпус ровный, грудь к полу."],
+["Отжимания с ногами 3×12–15","Ноги выше — больше верх груди."],
+["Медленные отжимания 2×макс","Опускание 3 сек."],
+["Узкие отжимания 3×12–15","Локти вдоль корпуса."],
+["Обратные отжимания 3×макс","Работает трицепс."],
+["Финишер 30/15 ×4","30 сек работа / 15 сек отдых."]
+]
 },
 {
-  title:"Спина + Бицепс",
-  text:`Подтягивания — 4×макс
-Тяга полотенца — 4×12–15
-Супермен — 3×20
-
-Сгибания рук — 4×15–20
-Статика 90° — 2×макс`
+title:"Спина + Бицепс",
+ex:[
+["Тяга полотенца 4×12–15","Своди лопатки."],
+["Супермен 3×20","Контроль поясницы."],
+["Сгибания рук 4×15–20","Без раскачки."],
+["Статика 90° 2×макс","Держи до жжения."]
+]
 },
 {
-  title:"Ноги",
-  text:`Присед — 5×20 (последний отказ)
-Выпады — 4×12/нога
-Присед с паузой — 3×10
-Ягодичный мост — 4×20
-
-Статика у стены × 2`
+title:"Ноги",
+ex:[
+["Присед 5×20","Последний до отказа."],
+["Выпады 4×12/нога","Колено назад."],
+["Присед с паузой 3×10","Пауза внизу."],
+["Ягодичный мост 4×20","Сжимай ягодицы."]
+]
 },
 {
-  title:"Плечи + Пресс",
-  text:`Отжимания уголком — 4×макс
-Разведения — 4×20
-
-Подъёмы ног — 4×макс
-Скручивания — 3×30
-Планка — 3×макс`
+title:"Плечи + Пресс",
+ex:[
+["Отжимания уголком 4×макс","Голова вниз."],
+["Разведения 4×20","До уровня плеч."],
+["Скручивания 3×30","Лопатки вверх."],
+["Подъёмы ног 4×макс","Ноги прямые."]
+]
 },
-{
-  title:"Фуллбоди",
-  text:`Отжимания — 3×макс
-Присед — 3×25
-Подтягивания — 3×макс
-Планка — 3×1 мин`
-},
-{title:"Отдых",text:"Прогулка, растяжка, сон"},
-{title:"Отдых",text:"Прогулка, растяжка, сон"}
+{title:"Фуллбоди",ex:[["Отжимания, присед, планка","Работа всем телом"]]},
+{title:"Отдых",ex:[["Восстановление","Прогулка, сон"]]},
+{title:"Отдых",ex:[["Восстановление","Прогулка, сон"]]}
 ];
 
-const todayWorkout = workouts[(day-1)%7];
-workout.innerHTML = `<strong>${todayWorkout.title}</strong><pre>${todayWorkout.text}</pre>`;
+const w=workouts[(day-1)%7];
+let wHTML=`<strong>${w.title}</strong>`;
+w.ex.forEach(e=>{
+  wHTML+=`
+  <div>• ${e[0]}
+    <details><summary>Как делать</summary><pre>${e[1]}</pre></details>
+  </div>`;
+});
+workout.innerHTML=wHTML;
 
-// ===== ПИТАНИЕ =====
-const isTrainDay = (day-1)%7 < 5;
-const TARGETS = isTrainDay
-? {cal:3200,prot:130,carb:420}
-: {cal:2800,prot:130,carb:300};
+// ==================== ПИТАНИЕ ====================
+const isTrainDay=(day-1)%7<5;
+const TARGETS=isTrainDay?{cal:3200,prot:130,carb:420}:{cal:2800,prot:130,carb:300};
 
-// ===== ГАРНИР =====
-let side = localStorage.side || "rice";
-const sides = {
-  rice:"рис варёный",
-  pasta:"макароны варёные",
-  buckwheat:"гречка варёная"
+let side=localStorage.side||"rice";
+const sides={rice:"рис",pasta:"макароны",buckwheat:"гречка"};
+const FOOD_NAMES = {
+  rice: "рис",
+  pasta: "макароны",
+  buckwheat: "гречка",
+  chicken: "курица",
+  egg: "яйца"
 };
-
-function setSide(s){
-  side=s;
-  localStorage.side=s;
-  renderButtons();
-  renderMeals();
-}
-
+function setSide(s){side=s;localStorage.side=s;renderButtons();renderMeals();}
 function renderButtons(){
   ["rice","pasta","buckwheat"].forEach(s=>{
-    document.getElementById("btn-"+s).classList.toggle("active", side===s);
+    document.getElementById("btn-"+s).classList.toggle("active",side===s);
   });
 }
 renderButtons();
 
-// ===== ПЛАН ПИТАНИЯ =====
-function renderMeals(){
-  let total={cal:0,prot:0,carb:0};
-  meals.innerHTML="";
+const FOOD={
+ chicken:{cal:165,prot:31,carb:0},
+ rice:{cal:130,prot:2.7,carb:28},
+ pasta:{cal:150,prot:5,carb:30},
+ buckwheat:{cal:110,prot:4,carb:21},
+ egg:{cal:70,prot:6,carb:1}
+};
 
-  const plan = isTrainDay ? [
-    {n:"Завтрак",t:`${sides[side]} 300 г + яйца 4 шт`,c:700,p:30,u:90},
-    {n:"Перекус",t:`${sides[side]} 250 г + яйца 2 шт`,c:500,p:20,u:70},
-    {n:"Обед",t:`Курица 180 г + ${sides[side]} 350 г`,c:800,p:55,u:100},
-    {n:"Перед тренировкой",t:`${sides[side]} 200 г + яйца 2 шт`,c:450,p:20,u:60},
-    {n:"После тренировки",t:`Гейнер + креатин`,c:500,p:25,u:80},
-    {n:"Ужин",t:`Курица 150 г + ${sides[side]} 250 г`,c:600,p:45,u:70}
+function getPlan(){
+  return isTrainDay ? [
+    ["Завтрак",[["rice",300],["egg",4]]],
+    ["Перекус",[["rice",250],["egg",2]]],
+    ["Обед",[["chicken",180],[side,350]]],
+    ["Перед тренировкой",[["rice",200],["egg",2]]],
+    ["Ужин",[["chicken",150],[side,250]]]
   ] : [
-    {n:"Завтрак",t:`${sides[side]} 250 г + яйца 4 шт`,c:650,p:30,u:80},
-    {n:"Перекус",t:`${sides[side]} 200 г + яйца 2 шт`,c:450,p:20,u:60},
-    {n:"Обед",t:`Курица 180 г + ${sides[side]} 300 г`,c:750,p:55,u:90},
-    {n:"Ужин",t:`Курица 150 г + ${sides[side]} 250 г`,c:700,p:45,u:70}
+    ["Завтрак",[["rice",250],["egg",4]]],
+    ["Перекус",[["rice",200],["egg",2]]],
+    ["Обед",[["chicken",180],[side,300]]],
+    ["Ужин",[["chicken",150],[side,250]]]
   ];
+}
 
-  plan.forEach((m,i)=>{
-    const id=`meal_${day}_${i}`;
-    const checked=localStorage[id]==="1";
-    if(checked){total.cal+=m.c;total.prot+=m.p;total.carb+=m.u;}
-    meals.innerHTML+=`
-    <label>
-      <input type="checkbox" ${checked?"checked":""}
-        onchange="toggleMeal('${id}',${m.c},${m.p},${m.u},this.checked)">
-      <div>
-        <div class="meal-title">${m.n}</div>
-        <div class="small">${m.t}</div>
-        <div class="small">${m.c} ккал · Б ${m.p} г · У ${m.u} г</div>
-      </div>
-    </label>`;
+function renderMeals(){
+  let total = { cal:0, prot:0, carb:0 };
+  meals.innerHTML = "";
+
+  const plan = getPlan();
+
+  plan.forEach((meal, i) => {
+    meals.innerHTML += `<div class="meal-title">${meal[0]}</div>`;
+
+    meal[1].forEach((item, j) => {
+      const product = item[0];
+      const recommended = item[1];
+
+      const key = `fact_${day}_${i}_${j}`;
+      const actual = Number(localStorage[key] || 0);
+
+      const f = FOOD[product];
+      const factor = product === "egg" ? actual : actual / 100;
+
+      total.cal  += f.cal  * factor;
+      total.prot += f.prot * factor;
+      total.carb += f.carb * factor;
+
+      meals.innerHTML += `
+        <div class="food-row">
+          <div class="food-name">${FOOD_NAMES[product]}</div>
+
+          <div class="food-rec">
+            рекомендация: ${recommended} ${product==="egg" ? "шт" : "г"}
+          </div>
+
+          <input class="food-input"
+            type="number"
+            min="0"
+            placeholder="0"
+            value="${actual || ""}"
+            onchange="
+              localStorage['${key}'] = this.value || 0;
+              renderMeals();
+            ">
+
+          <div class="food-rec">
+            ${product==="egg" ? "шт" : "г"}
+          </div>
+        </div>
+      `;
+    });
   });
 
-  window.toggleMeal=function(id,c,p,u,on){
-    localStorage[id]=on?"1":"0";
-    total.cal+=on?c:-c;
-    total.prot+=on?p:-p;
-    total.carb+=on?u:-u;
-    updateBars();
-  };
+  // ===== ПРОГРЕСС-БАРЫ =====
+  calFill.style.width  = Math.min(100, total.cal  / TARGETS.cal  * 100) + "%";
+  protFill.style.width = Math.min(100, total.prot / TARGETS.prot * 100) + "%";
+  carbFill.style.width = Math.min(100, total.carb / TARGETS.carb * 100) + "%";
 
-  function updateBars(){
-    calFill.style.width=Math.min(100,total.cal/TARGETS.cal*100)+"%";
-    protFill.style.width=Math.min(100,total.prot/TARGETS.prot*100)+"%";
-    carbFill.style.width=Math.min(100,total.carb/TARGETS.carb*100)+"%";
-    calText.innerText=`${total.cal} / ${TARGETS.cal} ккал`;
-    protText.innerText=`${total.prot} / ${TARGETS.prot} г белка`;
-    carbText.innerText=`${total.carb} / ${TARGETS.carb} г углеводов`;
+  calText.innerText  = `${Math.round(total.cal)} / ${TARGETS.cal} ккал`;
+  protText.innerText = `${Math.round(total.prot)} / ${TARGETS.prot} г белка`;
+  carbText.innerText = `${Math.round(total.carb)} / ${TARGETS.carb} г углеводов`;
+
+  // ===== АВТОСОВЕТ =====
+  const adviceEl = document.getElementById("advice");
+  if (adviceEl) {
+    adviceEl.innerText = "";
+
+    const carbLeft = TARGETS.carb - total.carb;
+    const protLeft = TARGETS.prot - total.prot;
+
+    if (carbLeft > 20) {
+      const grams = Math.round(carbLeft / FOOD[side].carb * 100);
+      adviceEl.innerText =
+        `🧠 Осталось добрать ${Math.round(carbLeft)} г углеводов — добавь ≈${grams} г ${sides[side]}`;
+    } 
+    else if (protLeft > 15) {
+      const grams = Math.round(protLeft / FOOD.chicken.prot * 100);
+      adviceEl.innerText =
+        `🧠 Осталось добрать ${Math.round(protLeft)} г белка — добавь ≈${grams} г курицы`;
+    }
   }
-  updateBars();
 }
-renderMeals();
+
+// ==================== ВЕС / ФОТО ====================
+function saveWeight(){
+ const w=document.getElementById("weightInput").value;
+ if(!w)return;
+ const data=JSON.parse(localStorage.weightLog||"[]");
+ data.push({date:new Date().toLocaleDateString(),weight:w});
+ localStorage.weightLog=JSON.stringify(data);
+ renderProgress();
+}
+function savePhoto(e){
+ const r=new FileReader();
+ r.onload=()=>{
+  const d=JSON.parse(localStorage.photoLog||"[]");
+  d.push({date:new Date().toLocaleDateString(),img:r.result});
+  localStorage.photoLog=JSON.stringify(d);
+  renderProgress();
+ };
+ r.readAsDataURL(e.target.files[0]);
+}
+function renderProgress(){
+ const w=JSON.parse(localStorage.weightLog||"[]");
+ const p=JSON.parse(localStorage.photoLog||"[]");
+ progressHistory.innerHTML="";
+ w.forEach((x,i)=>{
+  progressHistory.innerHTML+=`
+   <div class="small">${x.date} — ${x.weight} кг</div>
+   ${p[i]?`<img src="${p[i].img}">`:""}`;
+ });
+}
+renderProgress();
+
+// ==================== НЕДЕЛИ ====================
+function renderWeekly(){
+ const data=JSON.parse(localStorage.weightLog||"[]");
+ weekly.innerHTML="";
+ for(let i=0;i<data.length;i+=7){
+  weekly.innerHTML+=`
+   <div class="small">
+    Неделя ${Math.floor(i/7)+1}: вес ${data[i]?.weight||"-"} кг
+   </div>`;
+ }
+}
+renderWeekly();
+
+// ==================== НАПОМИНАНИЯ ====================
+const TIMES=["08:00","11:00","14:00","17:00","19:00","21:00"];
+let interval=null;
+function enableReminders(){
+ Notification.requestPermission();
+ localStorage.reminders="on";
+ interval=setInterval(()=>{
+  if(localStorage.reminders!=="on")return;
+  const t=new Date().toTimeString().slice(0,5);
+  if(TIMES.includes(t))
+   new Notification("🍽️ ПОРА ДЕЛАТЬ",{body:"NewMe ждёт"});
+ },60000);
+}
+function disableReminders(){
+ localStorage.reminders="off";
+ if(interval)clearInterval(interval);
+}
+
+// ==================== СИНХРОНИЗАЦИЯ ====================
+function exportData(){
+ const blob=new Blob([JSON.stringify(localStorage,null,2)],{type:"application/json"});
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download="newme_backup.json";
+ a.click();
+}
+function importData(e){
+ const r=new FileReader();
+ r.onload=()=>{
+  const d=JSON.parse(r.result);
+  Object.keys(d).forEach(k=>localStorage[k]=d[k]);
+  location.reload();
+ };
+ r.readAsText(e.target.files[0]);
+}
 </script>
 
 </body>
