@@ -14,25 +14,22 @@
   --accent:#5cff9d;
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui;background:var(--bg);color:var(--text)}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--text)}
 header{padding:20px;text-align:center;font-size:24px;font-weight:700}
 section{margin:16px;padding:16px;background:var(--card);border-radius:12px}
 h2{margin-top:0}
 .small{font-size:13px;color:var(--muted)}
 .progress{height:10px;background:#000;border-radius:6px;overflow:hidden}
 .fill{height:100%;background:var(--accent);width:0%}
-button{
-  padding:8px 12px;
-  margin:4px 4px 0 0;
-  background:transparent;
-  border:1px solid var(--accent);
-  color:var(--accent);
-  border-radius:8px;
-}
-button.active{background:var(--accent);color:#000}
 label{display:flex;gap:10px;margin:6px 0;align-items:flex-start}
 input{accent-color:var(--accent)}
-.meal{margin-bottom:10px}
+button{
+  padding:8px 12px;margin:4px 4px 0 0;
+  background:transparent;border:1px solid var(--accent);
+  color:var(--accent);border-radius:8px;
+}
+button.active{background:var(--accent);color:#000}
+pre{white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.4}
 .meal-title{font-weight:600}
 </style>
 </head>
@@ -59,10 +56,15 @@ input{accent-color:var(--accent)}
 </section>
 
 <section>
+<h2>🏋️ Сегодняшняя тренировка</h2>
+<div id="workout"></div>
+</section>
+
+<section>
 <h2>🍚 Выбор гарнира на сегодня</h2>
-<button onclick="setSide('rice')" id="btn-rice">Рис</button>
-<button onclick="setSide('pasta')" id="btn-pasta">Макароны</button>
-<button onclick="setSide('buckwheat')" id="btn-buckwheat">Гречка</button>
+<button id="btn-rice" onclick="setSide('rice')">Рис</button>
+<button id="btn-pasta" onclick="setSide('pasta')">Макароны</button>
+<button id="btn-buckwheat" onclick="setSide('buckwheat')">Гречка</button>
 </section>
 
 <section>
@@ -71,94 +73,141 @@ input{accent-color:var(--accent)}
 </section>
 
 <script>
-// ==== ДЕНЬ ====
+// ===== ДЕНЬ =====
 const start = localStorage.start || new Date().toISOString();
 localStorage.start = start;
 const day = Math.floor((Date.now()-new Date(start))/86400000)+1;
 dayInfo.innerText = `День ${day}`;
 
-// ==== МОТИВАЦИЯ ====
+// ===== МОТИВАЦИЯ =====
 const quotes=[
-  "Еда = рост",
-  "Не доел — не вырос",
-  "Масса любит систему",
-  "Сегодня ты строишь тело"
+  "Слабость — это привычка",
+  "Еда и тренировки = рост",
+  "Сегодня ты строишь тело",
+  "Система сильнее мотивации"
 ];
 const qKey="q"+day;
 if(!localStorage[qKey]) localStorage[qKey]=quotes[Math.floor(Math.random()*quotes.length)];
 quote.innerText="🧠 "+localStorage[qKey];
 
-// ==== ЛОГИКА ДНЯ ====
+// ===== ТРЕНИРОВКИ =====
+const workouts=[
+{
+  title:"Грудь + Трицепс",
+  text:`Отжимания — 3×15–20, 4-й до отказа
+Отжимания с ногами — 3×12–15
+Медленные отжимания — 2×макс
+
+Узкие отжимания — 3×12–15
+Обратные отжимания — 3×макс
+
+Финишер: 30/15 × 4`
+},
+{
+  title:"Спина + Бицепс",
+  text:`Подтягивания — 4×макс
+Тяга полотенца — 4×12–15
+Супермен — 3×20
+
+Сгибания рук — 4×15–20
+Статика 90° — 2×макс`
+},
+{
+  title:"Ноги",
+  text:`Присед — 5×20 (последний отказ)
+Выпады — 4×12/нога
+Присед с паузой — 3×10
+Ягодичный мост — 4×20
+
+Статика у стены × 2`
+},
+{
+  title:"Плечи + Пресс",
+  text:`Отжимания уголком — 4×макс
+Разведения — 4×20
+
+Подъёмы ног — 4×макс
+Скручивания — 3×30
+Планка — 3×макс`
+},
+{
+  title:"Фуллбоди",
+  text:`Отжимания — 3×макс
+Присед — 3×25
+Подтягивания — 3×макс
+Планка — 3×1 мин`
+},
+{title:"Отдых",text:"Прогулка, растяжка, сон"},
+{title:"Отдых",text:"Прогулка, растяжка, сон"}
+];
+
+const todayWorkout = workouts[(day-1)%7];
+workout.innerHTML = `<strong>${todayWorkout.title}</strong><pre>${todayWorkout.text}</pre>`;
+
+// ===== ПИТАНИЕ =====
 const isTrainDay = (day-1)%7 < 5;
 const TARGETS = isTrainDay
 ? {cal:3200,prot:130,carb:420}
 : {cal:2800,prot:130,carb:300};
 
-// ==== ГАРНИР ====
+// ===== ГАРНИР =====
 let side = localStorage.side || "rice";
+const sides = {
+  rice:"рис варёный",
+  pasta:"макароны варёные",
+  buckwheat:"гречка варёная"
+};
 
 function setSide(s){
-  side = s;
-  localStorage.side = s;
+  side=s;
+  localStorage.side=s;
   renderButtons();
   renderMeals();
 }
 
 function renderButtons(){
   ["rice","pasta","buckwheat"].forEach(s=>{
-    document.getElementById("btn-"+s)?.classList.toggle("active", side===s);
+    document.getElementById("btn-"+s).classList.toggle("active", side===s);
   });
 }
 renderButtons();
 
-// ==== ШАБЛОНЫ ГАРНИРОВ ====
-const sides = {
-  rice: {name:"рис варёный"},
-  pasta: {name:"макароны варёные"},
-  buckwheat: {name:"гречка варёная"}
-};
-
-// ==== ПИТАНИЕ ====
+// ===== ПЛАН ПИТАНИЯ =====
 function renderMeals(){
   let total={cal:0,prot:0,carb:0};
   meals.innerHTML="";
 
   const plan = isTrainDay ? [
-    {n:"☀️ Завтрак",t:`${sides[side].name} 300 г + яйца 4 шт`,c:700,p:30,u:90},
-    {n:"🕙 Перекус",t:`${sides[side].name} 250 г + яйца 2 шт`,c:500,p:20,u:70},
-    {n:"🍛 Обед",t:`Курица 180 г + ${sides[side].name} 350 г`,c:800,p:55,u:100},
-    {n:"🏋️ Перед тренировкой",t:`${sides[side].name} 200 г + яйца 2 шт`,c:450,p:20,u:60},
-    {n:"🧪 После тренировки",t:`Гейнер + креатин`,c:500,p:25,u:80},
-    {n:"🌙 Ужин",t:`Курица 150 г + ${sides[side].name} 250 г`,c:600,p:45,u:70}
+    {n:"Завтрак",t:`${sides[side]} 300 г + яйца 4 шт`,c:700,p:30,u:90},
+    {n:"Перекус",t:`${sides[side]} 250 г + яйца 2 шт`,c:500,p:20,u:70},
+    {n:"Обед",t:`Курица 180 г + ${sides[side]} 350 г`,c:800,p:55,u:100},
+    {n:"Перед тренировкой",t:`${sides[side]} 200 г + яйца 2 шт`,c:450,p:20,u:60},
+    {n:"После тренировки",t:`Гейнер + креатин`,c:500,p:25,u:80},
+    {n:"Ужин",t:`Курица 150 г + ${sides[side]} 250 г`,c:600,p:45,u:70}
   ] : [
-    {n:"☀️ Завтрак",t:`${sides[side].name} 250 г + яйца 4 шт`,c:650,p:30,u:80},
-    {n:"🕙 Перекус",t:`${sides[side].name} 200 г + яйца 2 шт`,c:450,p:20,u:60},
-    {n:"🍛 Обед",t:`Курица 180 г + ${sides[side].name} 300 г`,c:750,p:55,u:90},
-    {n:"🌙 Ужин",t:`Курица 150 г + ${sides[side].name} 250 г`,c:700,p:45,u:70}
+    {n:"Завтрак",t:`${sides[side]} 250 г + яйца 4 шт`,c:650,p:30,u:80},
+    {n:"Перекус",t:`${sides[side]} 200 г + яйца 2 шт`,c:450,p:20,u:60},
+    {n:"Обед",t:`Курица 180 г + ${sides[side]} 300 г`,c:750,p:55,u:90},
+    {n:"Ужин",t:`Курица 150 г + ${sides[side]} 250 г`,c:700,p:45,u:70}
   ];
 
   plan.forEach((m,i)=>{
     const id=`meal_${day}_${i}`;
-    const checked = localStorage[id]==="1";
-    if(checked){
-      total.cal+=m.c; total.prot+=m.p; total.carb+=m.u;
-    }
-
+    const checked=localStorage[id]==="1";
+    if(checked){total.cal+=m.c;total.prot+=m.p;total.carb+=m.u;}
     meals.innerHTML+=`
-    <div class="meal">
-      <label>
-        <input type="checkbox" ${checked?"checked":""}
-          onchange="toggleMeal('${id}',${m.c},${m.p},${m.u},this.checked)">
-        <div>
-          <div class="meal-title">${m.n}</div>
-          <div class="small">${m.t}</div>
-          <div class="small">${m.c} ккал · Б ${m.p} г · У ${m.u} г</div>
-        </div>
-      </label>
-    </div>`;
+    <label>
+      <input type="checkbox" ${checked?"checked":""}
+        onchange="toggleMeal('${id}',${m.c},${m.p},${m.u},this.checked)">
+      <div>
+        <div class="meal-title">${m.n}</div>
+        <div class="small">${m.t}</div>
+        <div class="small">${m.c} ккал · Б ${m.p} г · У ${m.u} г</div>
+      </div>
+    </label>`;
   });
 
-  window.toggleMeal = function(id,c,p,u,on){
+  window.toggleMeal=function(id,c,p,u,on){
     localStorage[id]=on?"1":"0";
     total.cal+=on?c:-c;
     total.prot+=on?p:-p;
@@ -176,7 +225,6 @@ function renderMeals(){
   }
   updateBars();
 }
-
 renderMeals();
 </script>
 
