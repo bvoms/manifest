@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewMe</title>
+
+<link rel="manifest" href="manifest.json">
+
+<style>
+:root{
+--bg:#0e0e11;--card:#16161d;--text:#eaeaf0;
+--muted:#9a9aa3;--accent:#5cff9d;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui;background:var(--bg);color:var(--text)}
+header{padding:20px;text-align:center;font-size:24px;font-weight:700}
+section{margin:16px;padding:16px;background:var(--card);border-radius:12px}
+h2{margin-top:0}
+label{display:flex;gap:10px;margin:8px 0}
+input{accent-color:var(--accent)}
+.progress{height:10px;background:#000;border-radius:6px;overflow:hidden}
+.fill{height:100%;background:var(--accent);width:0%}
+.small{font-size:13px;color:var(--muted)}
+canvas{width:100%;height:150px}
+button{
+width:100%;margin-top:10px;padding:10px;
+background:transparent;border:1px solid var(--accent);
+color:var(--accent);border-radius:8px;
+}
+button:hover{background:var(--accent);color:#000}
+</style>
+</head>
+
+<body>
+
+<header>🔥 NewMe</header>
+
+<section>
+<div id="dayInfo" class="small"></div>
+<div id="quote" class="small"></div>
+<div class="progress"><div class="fill" id="fill"></div></div>
+<div id="percent" class="small"></div>
+</section>
+
+<section>
+<h2>🏋️ Сегодняшняя тренировка</h2>
+<div id="workout"></div>
+</section>
+
+<section>
+<h2>📋 Чеклист</h2>
+<label><input type="checkbox"> Холод</label>
+<label><input type="checkbox"> Тренировка</label>
+<label><input type="checkbox"> Памп</label>
+<label><input type="checkbox"> Белок</label>
+<label><input type="checkbox"> Креатин</label>
+<label><input type="checkbox"> Гейнер</label>
+<label><input type="checkbox"> Сон</label>
+</section>
+
+<section>
+<h2>📈 Прогресс</h2>
+<canvas id="chart"></canvas>
+</section>
+
+<section>
+<h2>📅 День</h2>
+<label><input type="checkbox" id="close"> День закрыт</label>
+<button onclick="exportData()">Экспорт</button>
+</section>
+
+<script>
+// ДЕНЬ
+const start=localStorage.start||new Date().toISOString();
+localStorage.start=start;
+const day=Math.floor((Date.now()-new Date(start))/86400000)+1;
+dayInfo.innerText=`День ${day} из 30`;
+
+// ЦИТАТА
+const quotes=[
+"Дисциплина делает тебя опасным",
+"Сегодня строится твой вид",
+"Слабость — это привычка",
+"Ты делаешь то, что другие не делают"
+];
+const qKey="q"+day;
+if(!localStorage[qKey]) localStorage[qKey]=quotes[Math.random()*quotes.length|0];
+quote.innerText="🧠 "+localStorage[qKey];
+
+// ТРЕНИРОВКИ
+const workouts=[
+"Грудь + Трицепс",
+"Спина + Бицепс",
+"Ноги",
+"Плечи + Пресс",
+"Фуллбоди",
+"Отдых",
+"Отдых"
+];
+workout.innerText=workouts[new Date().getDay()-1||6];
+
+// ЧЕКЛИСТ
+const boxes=[...document.querySelectorAll("input[type=checkbox]:not(#close)")];
+boxes.forEach((b,i)=>{
+b.checked=localStorage["b"+i]=="1";
+b.onchange=()=>{localStorage["b"+i]=b.checked?"1":"0";update();}
+});
+
+// ПРОГРЕСС
+function update(){
+const done=boxes.filter(b=>b.checked).length;
+const p=Math.round(done/boxes.length*100);
+fill.style.width=p+"%";
+percent.innerText=`${p}% дня`;
+}
+update();
+
+// ИСТОРИЯ + ГРАФИК
+function draw(){
+const ctx=chart.getContext("2d");
+ctx.clearRect(0,0,chart.width,chart.height);
+const data=JSON.parse(localStorage.history||"[]");
+ctx.beginPath();
+data.forEach((d,i)=>{
+const x=i*(chart.width/(data.length-1||1));
+const y=chart.height-(d.percent/100*chart.height);
+ctx.lineTo(x,y);
+});
+ctx.strokeStyle="#5cff9d";ctx.stroke();
+}
+draw();
+
+close.onchange=()=>{
+if(close.checked){
+const percentDone=Math.round(boxes.filter(b=>b.checked).length/boxes.length*100);
+const data=JSON.parse(localStorage.history||"[]");
+data.push({day,percent:percentDone});
+localStorage.history=JSON.stringify(data);
+boxes.forEach((b,i)=>{b.checked=false;localStorage["b"+i]=0});
+close.checked=false;update();draw();
+}
+};
+
+// EXPORT
+function exportData(){
+const blob=new Blob([JSON.stringify(localStorage,null,2)],{type:"application/json"});
+const a=document.createElement("a");
+a.href=URL.createObjectURL(blob);
+a.download="NewMe.json";
+a.click();
+}
+
+// PWA
+if("serviceWorker"in navigator){
+navigator.serviceWorker.register("sw.js");
+}
+if(Notification.permission!=="granted"){
+Notification.requestPermission();
+}
+</script>
+
+</body>
+</html>
