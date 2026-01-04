@@ -98,7 +98,9 @@ const workouts=[
 "Отдых",
 "Отдых"
 ];
-workout.innerText=workouts[new Date().getDay()-1||6];
+const dayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+workout.innerText = workouts[dayIndex];
+
 
 // ЧЕКЛИСТ
 const boxes=[...document.querySelectorAll("input[type=checkbox]:not(#close)")];
