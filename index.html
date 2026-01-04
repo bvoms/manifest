@@ -3,44 +3,102 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NewMe</title>
-
-<link rel="manifest" href="manifest.json">
+<title>🔥 NewMe — Полноценный помощник</title>
 
 <style>
 :root{
---bg:#0e0e11;--card:#16161d;--text:#eaeaf0;
---muted:#9a9aa3;--accent:#5cff9d;
+  --bg:#0e0e11;
+  --card:#16161d;
+  --text:#eaeaf0;
+  --muted:#9a9aa3;
+  --accent:#5cff9d;
+  --warn:#ffb84d;
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui;background:var(--bg);color:var(--text)}
-header{padding:20px;text-align:center;font-size:24px;font-weight:700}
-section{margin:16px;padding:16px;background:var(--card);border-radius:12px}
+body{
+  margin:0;
+  font-family:system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+header{
+  padding:20px;
+  text-align:center;
+  font-size:24px;
+  font-weight:700;
+}
+section{
+  margin:16px;
+  padding:16px;
+  background:var(--card);
+  border-radius:12px;
+}
 h2{margin-top:0}
-label{display:flex;gap:10px;margin:8px 0}
-input{accent-color:var(--accent)}
-.progress{height:10px;background:#000;border-radius:6px;overflow:hidden}
-.fill{height:100%;background:var(--accent);width:0%}
 .small{font-size:13px;color:var(--muted)}
-canvas{width:100%;height:150px}
+.progress{
+  height:10px;
+  background:#000;
+  border-radius:6px;
+  overflow:hidden;
+  margin-top:6px;
+}
+.fill{
+  height:100%;
+  width:0%;
+  background:var(--accent);
+}
+label{
+  display:flex;
+  gap:10px;
+  margin:6px 0;
+  align-items:center;
+}
+input[type=checkbox]{accent-color:var(--accent)}
 button{
-width:100%;margin-top:10px;padding:10px;
-background:transparent;border:1px solid var(--accent);
-color:var(--accent);border-radius:8px;
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  background:transparent;
+  border:1px solid var(--accent);
+  color:var(--accent);
+  border-radius:8px;
 }
 button:hover{background:var(--accent);color:#000}
+pre{
+  white-space:pre-wrap;
+  font-family:inherit;
+  font-size:14px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+@media(max-width:600px){
+  .grid{grid-template-columns:1fr}
+}
 </style>
 </head>
 
 <body>
 
-<header>🔥 NewMe</header>
+<header>🔥 NewMe — полноценный помощник</header>
 
 <section>
-<div id="dayInfo" class="small"></div>
-<div id="quote" class="small"></div>
-<div class="progress"><div class="fill" id="fill"></div></div>
-<div id="percent" class="small"></div>
+  <div class="small" id="dayInfo"></div>
+  <div class="small" id="quote"></div>
+
+  <div class="small">Калории</div>
+  <div class="progress"><div class="fill" id="calFill"></div></div>
+  <div class="small" id="calText"></div>
+
+  <div class="small">Белок</div>
+  <div class="progress"><div class="fill" id="protFill"></div></div>
+  <div class="small" id="protText"></div>
+
+  <div class="small">Углеводы</div>
+  <div class="progress"><div class="fill" id="carbFill"></div></div>
+  <div class="small" id="carbText"></div>
 </section>
 
 <section>
@@ -49,116 +107,165 @@ button:hover{background:var(--accent);color:#000}
 </section>
 
 <section>
-<h2>📋 Чеклист</h2>
-<label><input type="checkbox"> Холод</label>
-<label><input type="checkbox"> Тренировка</label>
-<label><input type="checkbox"> Памп</label>
-<label><input type="checkbox"> Белок</label>
-<label><input type="checkbox"> Креатин</label>
-<label><input type="checkbox"> Гейнер</label>
-<label><input type="checkbox"> Сон</label>
+<h2>🍽️ Питание (готовая еда)</h2>
+<div id="meals"></div>
 </section>
 
 <section>
-<h2>📈 Прогресс</h2>
-<canvas id="chart"></canvas>
+<h2>🔔 Напоминания</h2>
+<button onclick="enableReminders()">Включить напоминания</button>
+<div class="small">08:00 · 11:00 · 14:00 · 17:00 · 19:00 · 21:00</div>
 </section>
 
 <section>
-<h2>📅 День</h2>
-<label><input type="checkbox" id="close"> День закрыт</label>
-<button onclick="exportData()">Экспорт</button>
+<h2>📊 Недельная аналитика</h2>
+<div id="weekStats" class="small"></div>
 </section>
 
 <script>
-// ДЕНЬ
-const start=localStorage.start||new Date().toISOString();
-localStorage.start=start;
-const day=Math.floor((Date.now()-new Date(start))/86400000)+1;
-dayInfo.innerText=`День ${day} из 30`;
+// ===== ДЕНЬ ЦИКЛА =====
+const start = localStorage.start || new Date().toISOString();
+localStorage.start = start;
+const day = Math.floor((Date.now()-new Date(start))/86400000)+1;
+dayInfo.innerText = `День ${day} | Цикл ${(day-1)%7+1}`;
 
-// ЦИТАТА
+// ===== МОТИВАЦИЯ =====
 const quotes=[
-"Дисциплина делает тебя опасным",
-"Сегодня строится твой вид",
-"Слабость — это привычка",
-"Ты делаешь то, что другие не делают"
+  "Дисциплина решает",
+  "Рост — это система",
+  "Ты строишь тело каждый день",
+  "Памп временный, привычки навсегда"
 ];
 const qKey="q"+day;
 if(!localStorage[qKey]) localStorage[qKey]=quotes[Math.random()*quotes.length|0];
 quote.innerText="🧠 "+localStorage[qKey];
 
-// ТРЕНИРОВКИ
+// ===== ТРЕНИРОВКИ =====
 const workouts=[
-"Грудь + Трицепс",
-"Спина + Бицепс",
-"Ноги",
-"Плечи + Пресс",
-"Фуллбоди",
-"Отдых",
-"Отдых"
+{t:"Грудь + Трицепс",x:`Отжимания 3×15–20 (посл. отказ)
+Отжимания с ногами 3×12–15
+Медленные отжимания 2×макс
+Узкие отжимания 3×12–15
+Обратные отжимания 3×макс
+Финишер 30/15 ×4`},
+{t:"Спина + Бицепс",x:`Подтягивания 4×макс
+Тяга полотенца 4×12–15
+Супермен 3×20
+Сгибания рук 4×15–20
+Статика 90° ×2`},
+{t:"Ноги",x:`Присед 5×20 (посл. отказ)
+Выпады 4×12/нога
+Пауза-присед 3×10
+Ягодичный мост 4×20
+Статика ×2`},
+{t:"Плечи + Пресс",x:`Отжимания уголком 4×макс
+Разведения 4×20
+Подъёмы ног 4×макс
+Скручивания 3×30
+Планка 3×макс`},
+{t:"Фуллбоди",x:`Отжимания 3×макс
+Присед 3×25
+Подтягивания 3×макс
+Планка 3×1 мин`},
+{t:"Отдых",x:"Прогулка · растяжка · сон"},
+{t:"Отдых",x:"Прогулка · растяжка · сон"}
 ];
-const dayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
-workout.innerText = workouts[dayIndex];
+const todayWorkout=workouts[(day-1)%7];
+workout.innerHTML=`<strong>${todayWorkout.t}</strong><pre>${todayWorkout.x}</pre>`;
 
+// ===== ПИТАНИЕ =====
+const isTrainDay=(day-1)%7<5;
 
-// ЧЕКЛИСТ
-const boxes=[...document.querySelectorAll("input[type=checkbox]:not(#close)")];
-boxes.forEach((b,i)=>{
-b.checked=localStorage["b"+i]=="1";
-b.onchange=()=>{localStorage["b"+i]=b.checked?"1":"0";update();}
+const TARGETS=isTrainDay
+? {cal:3200,prot:130,carb:420}
+: {cal:2800,prot:130,carb:300};
+
+const mealPlan=isTrainDay?[
+{n:"Завтрак",c:700,p:30,u:90},
+{n:"Перекус",c:500,p:20,u:70},
+{n:"Обед",c:800,p:55,u:100},
+{n:"Перед тренировкой",c:450,p:20,u:60},
+{n:"После тренировки",c:500,p:25,u:80},
+{n:"Ужин",c:600,p:45,u:70}
+]:[
+{n:"Завтрак",c:650,p:30,u:80},
+{n:"Перекус",c:450,p:20,u:60},
+{n:"Обед",c:750,p:55,u:90},
+{n:"Ужин",c:700,p:45,u:70}
+];
+
+let total={cal:0,prot:0,carb:0};
+const mealsBox=document.getElementById("meals");
+
+mealPlan.forEach((m,i)=>{
+  const id=`meal${day}_${i}`;
+  const checked=localStorage[id]==="1";
+  if(checked){
+    total.cal+=m.c;
+    total.prot+=m.p;
+    total.carb+=m.u;
+  }
+  mealsBox.innerHTML+=`
+  <label>
+    <input type="checkbox" ${checked?"checked":""}
+      onchange="toggleMeal('${id}',${m.c},${m.p},${m.u},this.checked)">
+    ${m.n} — ${m.c} ккал | Б ${m.p} г | У ${m.u} г
+  </label>`;
 });
 
-// ПРОГРЕСС
-function update(){
-const done=boxes.filter(b=>b.checked).length;
-const p=Math.round(done/boxes.length*100);
-fill.style.width=p+"%";
-percent.innerText=`${p}% дня`;
-}
-update();
-
-// ИСТОРИЯ + ГРАФИК
-function draw(){
-const ctx=chart.getContext("2d");
-ctx.clearRect(0,0,chart.width,chart.height);
-const data=JSON.parse(localStorage.history||"[]");
-ctx.beginPath();
-data.forEach((d,i)=>{
-const x=i*(chart.width/(data.length-1||1));
-const y=chart.height-(d.percent/100*chart.height);
-ctx.lineTo(x,y);
-});
-ctx.strokeStyle="#5cff9d";ctx.stroke();
-}
-draw();
-
-close.onchange=()=>{
-if(close.checked){
-const percentDone=Math.round(boxes.filter(b=>b.checked).length/boxes.length*100);
-const data=JSON.parse(localStorage.history||"[]");
-data.push({day,percent:percentDone});
-localStorage.history=JSON.stringify(data);
-boxes.forEach((b,i)=>{b.checked=false;localStorage["b"+i]=0});
-close.checked=false;update();draw();
-}
-};
-
-// EXPORT
-function exportData(){
-const blob=new Blob([JSON.stringify(localStorage,null,2)],{type:"application/json"});
-const a=document.createElement("a");
-a.href=URL.createObjectURL(blob);
-a.download="NewMe.json";
-a.click();
+function toggleMeal(id,c,p,u,on){
+  localStorage[id]=on?"1":"0";
+  total.cal+=on?c:-c;
+  total.prot+=on?p:-p;
+  total.carb+=on?u:-u;
+  renderTotals();
 }
 
-// PWA
-if("serviceWorker"in navigator){
-navigator.serviceWorker.register("sw.js");
+function renderTotals(){
+  calFill.style.width=Math.min(100,total.cal/TARGETS.cal*100)+"%";
+  protFill.style.width=Math.min(100,total.prot/TARGETS.prot*100)+"%";
+  carbFill.style.width=Math.min(100,total.carb/TARGETS.carb*100)+"%";
+
+  calText.innerText=`${total.cal} / ${TARGETS.cal} ккал`;
+  protText.innerText=`${total.prot} / ${TARGETS.prot} г белка`;
+  carbText.innerText=`${total.carb} / ${TARGETS.carb} г углеводов`;
 }
-if(Notification.permission!=="granted"){
-Notification.requestPermission();
+renderTotals();
+
+// ===== НЕДЕЛЬНАЯ АНАЛИТИКА =====
+function weekStats(){
+  let days=0,c=0,p=0,u=0;
+  for(let d=day-6;d<=day;d++){
+    mealPlan.forEach((_,i)=>{
+      if(localStorage[`meal${d}_${i}`]==="1"){
+        c+=mealPlan[i]?.c||0;
+        p+=mealPlan[i]?.p||0;
+        u+=mealPlan[i]?.u||0;
+      }
+    });
+    days++;
+  }
+  weekStats.innerText=
+    `Среднее за 7 дней:
+Ккал ~${Math.round(c/days)}
+Белок ~${Math.round(p/days)} г
+Угли ~${Math.round(u/days)} г`;
+}
+weekStats();
+
+// ===== НАПОМИНАНИЯ =====
+function enableReminders(){
+  if(Notification.permission!=="granted"){
+    Notification.requestPermission();
+  }
+  const times=["08:00","11:00","14:00","17:00","19:00","21:00"];
+  setInterval(()=>{
+    const now=new Date();
+    const t=now.toTimeString().slice(0,5);
+    if(times.includes(t)){
+      new Notification("🍽️ ПОРА ЕСТЬ",{body:"Еда = рост"});
+    }
+  },60000);
 }
 </script>
 
