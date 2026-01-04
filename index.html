@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🔥 NewMe — Полноценный помощник</title>
+<title>🔥 NewMe — полноценный помощник</title>
 
 <style>
 :root{
@@ -12,71 +12,28 @@
   --text:#eaeaf0;
   --muted:#9a9aa3;
   --accent:#5cff9d;
-  --warn:#ffb84d;
 }
 *{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:system-ui,sans-serif;
-  background:var(--bg);
-  color:var(--text);
-}
-header{
-  padding:20px;
-  text-align:center;
-  font-size:24px;
-  font-weight:700;
-}
-section{
-  margin:16px;
-  padding:16px;
-  background:var(--card);
-  border-radius:12px;
-}
+body{margin:0;font-family:system-ui;background:var(--bg);color:var(--text)}
+header{padding:20px;text-align:center;font-size:24px;font-weight:700}
+section{margin:16px;padding:16px;background:var(--card);border-radius:12px}
 h2{margin-top:0}
 .small{font-size:13px;color:var(--muted)}
-.progress{
-  height:10px;
-  background:#000;
-  border-radius:6px;
-  overflow:hidden;
-  margin-top:6px;
-}
-.fill{
-  height:100%;
-  width:0%;
-  background:var(--accent);
-}
-label{
-  display:flex;
-  gap:10px;
-  margin:6px 0;
-  align-items:center;
-}
-input[type=checkbox]{accent-color:var(--accent)}
+.progress{height:10px;background:#000;border-radius:6px;overflow:hidden}
+.fill{height:100%;background:var(--accent);width:0%}
 button{
-  width:100%;
-  padding:10px;
-  margin-top:10px;
+  padding:8px 12px;
+  margin:4px 4px 0 0;
   background:transparent;
   border:1px solid var(--accent);
   color:var(--accent);
   border-radius:8px;
 }
-button:hover{background:var(--accent);color:#000}
-pre{
-  white-space:pre-wrap;
-  font-family:inherit;
-  font-size:14px;
-}
-.grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-}
-@media(max-width:600px){
-  .grid{grid-template-columns:1fr}
-}
+button.active{background:var(--accent);color:#000}
+label{display:flex;gap:10px;margin:6px 0;align-items:flex-start}
+input{accent-color:var(--accent)}
+.meal{margin-bottom:10px}
+.meal-title{font-weight:600}
 </style>
 </head>
 
@@ -102,8 +59,10 @@ pre{
 </section>
 
 <section>
-<h2>🏋️ Сегодняшняя тренировка</h2>
-<div id="workout"></div>
+<h2>🍚 Выбор гарнира на сегодня</h2>
+<button onclick="setSide('rice')" id="btn-rice">Рис</button>
+<button onclick="setSide('pasta')" id="btn-pasta">Макароны</button>
+<button onclick="setSide('buckwheat')" id="btn-buckwheat">Гречка</button>
 </section>
 
 <section>
@@ -111,162 +70,114 @@ pre{
 <div id="meals"></div>
 </section>
 
-<section>
-<h2>🔔 Напоминания</h2>
-<button onclick="enableReminders()">Включить напоминания</button>
-<div class="small">08:00 · 11:00 · 14:00 · 17:00 · 19:00 · 21:00</div>
-</section>
-
-<section>
-<h2>📊 Недельная аналитика</h2>
-<div id="weekStats" class="small"></div>
-</section>
-
 <script>
-// ===== ДЕНЬ ЦИКЛА =====
+// ==== ДЕНЬ ====
 const start = localStorage.start || new Date().toISOString();
 localStorage.start = start;
 const day = Math.floor((Date.now()-new Date(start))/86400000)+1;
-dayInfo.innerText = `День ${day} | Цикл ${(day-1)%7+1}`;
+dayInfo.innerText = `День ${day}`;
 
-// ===== МОТИВАЦИЯ =====
+// ==== МОТИВАЦИЯ ====
 const quotes=[
-  "Дисциплина решает",
-  "Рост — это система",
-  "Ты строишь тело каждый день",
-  "Памп временный, привычки навсегда"
+  "Еда = рост",
+  "Не доел — не вырос",
+  "Масса любит систему",
+  "Сегодня ты строишь тело"
 ];
 const qKey="q"+day;
-if(!localStorage[qKey]) localStorage[qKey]=quotes[Math.random()*quotes.length|0];
+if(!localStorage[qKey]) localStorage[qKey]=quotes[Math.floor(Math.random()*quotes.length)];
 quote.innerText="🧠 "+localStorage[qKey];
 
-// ===== ТРЕНИРОВКИ =====
-const workouts=[
-{t:"Грудь + Трицепс",x:`Отжимания 3×15–20 (посл. отказ)
-Отжимания с ногами 3×12–15
-Медленные отжимания 2×макс
-Узкие отжимания 3×12–15
-Обратные отжимания 3×макс
-Финишер 30/15 ×4`},
-{t:"Спина + Бицепс",x:`Подтягивания 4×макс
-Тяга полотенца 4×12–15
-Супермен 3×20
-Сгибания рук 4×15–20
-Статика 90° ×2`},
-{t:"Ноги",x:`Присед 5×20 (посл. отказ)
-Выпады 4×12/нога
-Пауза-присед 3×10
-Ягодичный мост 4×20
-Статика ×2`},
-{t:"Плечи + Пресс",x:`Отжимания уголком 4×макс
-Разведения 4×20
-Подъёмы ног 4×макс
-Скручивания 3×30
-Планка 3×макс`},
-{t:"Фуллбоди",x:`Отжимания 3×макс
-Присед 3×25
-Подтягивания 3×макс
-Планка 3×1 мин`},
-{t:"Отдых",x:"Прогулка · растяжка · сон"},
-{t:"Отдых",x:"Прогулка · растяжка · сон"}
-];
-const todayWorkout=workouts[(day-1)%7];
-workout.innerHTML=`<strong>${todayWorkout.t}</strong><pre>${todayWorkout.x}</pre>`;
-
-// ===== ПИТАНИЕ =====
-const isTrainDay=(day-1)%7<5;
-
-const TARGETS=isTrainDay
+// ==== ЛОГИКА ДНЯ ====
+const isTrainDay = (day-1)%7 < 5;
+const TARGETS = isTrainDay
 ? {cal:3200,prot:130,carb:420}
 : {cal:2800,prot:130,carb:300};
 
-const mealPlan=isTrainDay?[
-{n:"Завтрак",c:700,p:30,u:90},
-{n:"Перекус",c:500,p:20,u:70},
-{n:"Обед",c:800,p:55,u:100},
-{n:"Перед тренировкой",c:450,p:20,u:60},
-{n:"После тренировки",c:500,p:25,u:80},
-{n:"Ужин",c:600,p:45,u:70}
-]:[
-{n:"Завтрак",c:650,p:30,u:80},
-{n:"Перекус",c:450,p:20,u:60},
-{n:"Обед",c:750,p:55,u:90},
-{n:"Ужин",c:700,p:45,u:70}
-];
+// ==== ГАРНИР ====
+let side = localStorage.side || "rice";
 
-let total={cal:0,prot:0,carb:0};
-const mealsBox=document.getElementById("meals");
-
-mealPlan.forEach((m,i)=>{
-  const id=`meal${day}_${i}`;
-  const checked=localStorage[id]==="1";
-  if(checked){
-    total.cal+=m.c;
-    total.prot+=m.p;
-    total.carb+=m.u;
-  }
-  mealsBox.innerHTML+=`
-  <label>
-    <input type="checkbox" ${checked?"checked":""}
-      onchange="toggleMeal('${id}',${m.c},${m.p},${m.u},this.checked)">
-    ${m.n} — ${m.c} ккал | Б ${m.p} г | У ${m.u} г
-  </label>`;
-});
-
-function toggleMeal(id,c,p,u,on){
-  localStorage[id]=on?"1":"0";
-  total.cal+=on?c:-c;
-  total.prot+=on?p:-p;
-  total.carb+=on?u:-u;
-  renderTotals();
+function setSide(s){
+  side = s;
+  localStorage.side = s;
+  renderButtons();
+  renderMeals();
 }
 
-function renderTotals(){
-  calFill.style.width=Math.min(100,total.cal/TARGETS.cal*100)+"%";
-  protFill.style.width=Math.min(100,total.prot/TARGETS.prot*100)+"%";
-  carbFill.style.width=Math.min(100,total.carb/TARGETS.carb*100)+"%";
-
-  calText.innerText=`${total.cal} / ${TARGETS.cal} ккал`;
-  protText.innerText=`${total.prot} / ${TARGETS.prot} г белка`;
-  carbText.innerText=`${total.carb} / ${TARGETS.carb} г углеводов`;
+function renderButtons(){
+  ["rice","pasta","buckwheat"].forEach(s=>{
+    document.getElementById("btn-"+s)?.classList.toggle("active", side===s);
+  });
 }
-renderTotals();
+renderButtons();
 
-// ===== НЕДЕЛЬНАЯ АНАЛИТИКА =====
-function weekStats(){
-  let days=0,c=0,p=0,u=0;
-  for(let d=day-6;d<=day;d++){
-    mealPlan.forEach((_,i)=>{
-      if(localStorage[`meal${d}_${i}`]==="1"){
-        c+=mealPlan[i]?.c||0;
-        p+=mealPlan[i]?.p||0;
-        u+=mealPlan[i]?.u||0;
-      }
-    });
-    days++;
-  }
-  weekStats.innerText=
-    `Среднее за 7 дней:
-Ккал ~${Math.round(c/days)}
-Белок ~${Math.round(p/days)} г
-Угли ~${Math.round(u/days)} г`;
-}
-weekStats();
+// ==== ШАБЛОНЫ ГАРНИРОВ ====
+const sides = {
+  rice: {name:"рис варёный"},
+  pasta: {name:"макароны варёные"},
+  buckwheat: {name:"гречка варёная"}
+};
 
-// ===== НАПОМИНАНИЯ =====
-function enableReminders(){
-  if(Notification.permission!=="granted"){
-    Notification.requestPermission();
-  }
-  const times=["08:00","11:00","14:00","17:00","19:00","21:00"];
-  setInterval(()=>{
-    const now=new Date();
-    const t=now.toTimeString().slice(0,5);
-    if(times.includes(t)){
-      new Notification("🍽️ ПОРА ЕСТЬ",{body:"Еда = рост"});
+// ==== ПИТАНИЕ ====
+function renderMeals(){
+  let total={cal:0,prot:0,carb:0};
+  meals.innerHTML="";
+
+  const plan = isTrainDay ? [
+    {n:"☀️ Завтрак",t:`${sides[side].name} 300 г + яйца 4 шт`,c:700,p:30,u:90},
+    {n:"🕙 Перекус",t:`${sides[side].name} 250 г + яйца 2 шт`,c:500,p:20,u:70},
+    {n:"🍛 Обед",t:`Курица 180 г + ${sides[side].name} 350 г`,c:800,p:55,u:100},
+    {n:"🏋️ Перед тренировкой",t:`${sides[side].name} 200 г + яйца 2 шт`,c:450,p:20,u:60},
+    {n:"🧪 После тренировки",t:`Гейнер + креатин`,c:500,p:25,u:80},
+    {n:"🌙 Ужин",t:`Курица 150 г + ${sides[side].name} 250 г`,c:600,p:45,u:70}
+  ] : [
+    {n:"☀️ Завтрак",t:`${sides[side].name} 250 г + яйца 4 шт`,c:650,p:30,u:80},
+    {n:"🕙 Перекус",t:`${sides[side].name} 200 г + яйца 2 шт`,c:450,p:20,u:60},
+    {n:"🍛 Обед",t:`Курица 180 г + ${sides[side].name} 300 г`,c:750,p:55,u:90},
+    {n:"🌙 Ужин",t:`Курица 150 г + ${sides[side].name} 250 г`,c:700,p:45,u:70}
+  ];
+
+  plan.forEach((m,i)=>{
+    const id=`meal_${day}_${i}`;
+    const checked = localStorage[id]==="1";
+    if(checked){
+      total.cal+=m.c; total.prot+=m.p; total.carb+=m.u;
     }
-  },60000);
+
+    meals.innerHTML+=`
+    <div class="meal">
+      <label>
+        <input type="checkbox" ${checked?"checked":""}
+          onchange="toggleMeal('${id}',${m.c},${m.p},${m.u},this.checked)">
+        <div>
+          <div class="meal-title">${m.n}</div>
+          <div class="small">${m.t}</div>
+          <div class="small">${m.c} ккал · Б ${m.p} г · У ${m.u} г</div>
+        </div>
+      </label>
+    </div>`;
+  });
+
+  window.toggleMeal = function(id,c,p,u,on){
+    localStorage[id]=on?"1":"0";
+    total.cal+=on?c:-c;
+    total.prot+=on?p:-p;
+    total.carb+=on?u:-u;
+    updateBars();
+  };
+
+  function updateBars(){
+    calFill.style.width=Math.min(100,total.cal/TARGETS.cal*100)+"%";
+    protFill.style.width=Math.min(100,total.prot/TARGETS.prot*100)+"%";
+    carbFill.style.width=Math.min(100,total.carb/TARGETS.carb*100)+"%";
+    calText.innerText=`${total.cal} / ${TARGETS.cal} ккал`;
+    protText.innerText=`${total.prot} / ${TARGETS.prot} г белка`;
+    carbText.innerText=`${total.carb} / ${TARGETS.carb} г углеводов`;
+  }
+  updateBars();
 }
+
+renderMeals();
 </script>
 
 </body>
